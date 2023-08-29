@@ -1,74 +1,35 @@
 #include "binary_trees.h"
 
 /**
- * binary_tree_find_root - find the root of a binary tree
- * @node: a pointer to a binary tree node
- *
- * Return: a pointer to the root of the tree
+ * binary_trees_ancestor - function that checks an ancestor
+ * @first: First node
+ * @second: Second node
+ * Return: the node of the ancestor
  */
-const bt_t *binary_tree_find_root(const bt_t *node)
-{
-	const bt_t *root = node;
 
-	if (node)
+binary_tree_t *binary_trees_ancestor(const binary_tree_t *first,
+				     const binary_tree_t *second)
+{
+	binary_tree_t *p, *q;
+
+	if (first == NULL || second == NULL)
 	{
-		while ((node = node->parent))
-			root = node;
+		return (NULL);
 	}
-	return (root);
-}
-
-/**
- * _binary_trees_ancestor - find the least common ancestor of two nodes
- * @root: a pointer to a subtree root
- * @n1: a pointer to a descendant
- * @n2: a pointer to a descendant
- *
- * Return: a pointer to the least common ancestor
- */
-bt_t *_binary_trees_ancestor(const bt_t *root, const bt_t *n1, const bt_t *n2)
-{
-	const bt_t *lhs = NULL;
-	const bt_t *rhs = NULL;
-
-	if (root)
+	if (first == second)
 	{
-		if (root == n1 || root == n2)
-			return ((bt_t *) root);
-
-		lhs = _binary_trees_ancestor(root->left, n1, n2);
-		rhs = _binary_trees_ancestor(root->right, n1, n2);
-
-		if (lhs && rhs)
-			return ((bt_t *) root);
-		if (lhs)
-			return ((bt_t *) lhs);
-		if (rhs)
-			return ((bt_t *) rhs);
+		return ((binary_tree_t *)first);
 	}
-	return (NULL);
-}
 
-/**
- * binary_trees_ancestor - find the least common ancestor of two nodes
- * @n1: a pointer to a node
- * @n2: a pointer to a node
- *
- * Return: a pointer to the least common ancestor
- */
-bt_t *binary_trees_ancestor(const bt_t *n1, const bt_t *n2)
-{
-	const bt_t *root1 = NULL;
-	const bt_t *root2 = NULL;
-
-	if (n1 == n2)
-		return ((bt_t *) n1);
-
-	root1 = binary_tree_find_root(n1);
-	root2 = binary_tree_find_root(n2);
-
-	if (root1 == root2)
-		return ((bt_t *) _binary_trees_ancestor(root1, n1, n2));
-
-	return (NULL);
+	p = first->parent;
+	q = second->parent;
+	if (p == NULL || first == q || (!p->parent && q))
+	{
+		return (binary_trees_ancestor(first, q));
+	}
+	else if (q == NULL || p == second || (!q->parent && p))
+	{
+		return (binary_trees_ancestor(p, second));
+	}
+	return (binary_trees_ancestor(p, q));
 }

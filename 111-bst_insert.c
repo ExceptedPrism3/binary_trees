@@ -1,48 +1,49 @@
 #include "binary_trees.h"
-
 /**
- * _bst_insert - insert a node into a binary search tree
- * @tree: a double pointer to the root of the target tree
- * @value: the value to add to the tree
- *
- * Return: If memory allocation fails, return NULL.
- * Otherwise, return a pointer to the newly created node.
- */
-bst_t *_bst_insert(bst_t **tree, int value)
-{
-	bst_t *node = NULL;
-
-	if (*tree)
-	{
-		if (value < (*tree)->n)
-		{
-			node = _bst_insert(&((*tree)->left), value);
-			if (node && !node->parent)
-				node->parent = *tree;
-			return (node);
-		}
-		if (value > (*tree)->n)
-		{
-			node = _bst_insert(&((*tree)->right), value);
-			if (node && !node->parent)
-				node->parent = *tree;
-			return (node);
-		}
-		return (NULL);
-	}
-	*tree = binary_tree_node(NULL, value);
-	return (*tree);
-}
-
-/**
- * bst_insert - insert a node into a binary search tree
- * @tree: a double pointer to the root of the target tree
- * @value: the value to add to the tree
- *
- * Return: If memory allocation fails, return NULL.
- * Otherwise, return a pointer to the newly created node.
+ * bst_insert - insert nodes in order to create a BST tree
+ * @tree: tree to create with type BST
+ * @value: value of node to insert
+ * Return: BST tree
  */
 bst_t *bst_insert(bst_t **tree, int value)
 {
-	return (tree ? _bst_insert(tree, value) : NULL);
+	bst_t *new, *temp;
+	binary_tree_t *aux;
+
+	if (tree == NULL)
+		return (NULL);
+
+	if (*tree == NULL)
+	{
+		aux = binary_tree_node((binary_tree_t *)(*tree), value);
+		new = (bst_t *)aux;
+		*tree = new;
+	}
+	else
+	{
+		temp = *tree;
+		if (value < temp->n)
+		{
+			if (temp->left)
+				new = bst_insert(&temp->left, value);
+			else
+			{
+				aux = binary_tree_node((binary_tree_t *)temp, value);
+				new = temp->left = (bst_t *)aux;
+			}
+		}
+		else if (value > temp->n)
+		{
+			if (temp->right)
+				new = bst_insert(&temp->right, value);
+			else
+			{
+				aux = binary_tree_node((binary_tree_t *)temp, value);
+				new = temp->right = aux;
+			}
+		}
+		else
+			return (NULL);
+	}
+	return (new);
 }

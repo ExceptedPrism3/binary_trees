@@ -1,106 +1,128 @@
 #include "binary_trees.h"
-
 /**
- * queue_push - push an element into a queue
- * @rear: a double pointer to the end of the queue
- * @data: a pointer to the element to queue
- *
- * Return: If memory allocation fails, return NULL.
- * Otherwise, return a pointer to the new node.
+ * binary_tree_height - Function that measures the height of a binary tree
+ * @tree: tree to go through
+ * Return: the height
  */
-queue_t *queue_push(queue_t **rear, const bt_t *data)
+size_t binary_tree_height(const binary_tree_t *tree)
 {
-	queue_t *new = calloc(1, sizeof(*new));
+	size_t l = 0;
+	size_t r = 0;
 
-	if (new)
+	if (tree == NULL)
 	{
-		new->data = (void *) data;
-		if (rear)
-		{
-			if (*rear)
-				new->next = (*rear)->next;
-			else
-				*rear = new;
-			(*rear)->next = new;
-		}
+		return (0);
 	}
-	return (new);
-}
-
-/**
- * queue_pop - pop an element from a queue
- * @rear: a double pointer to the end of the queue
- *
- * Description: This function expects a pointer to a non-empty queue.
- *
- * Return: Return a pointer to the popped element.
- */
-const bt_t *queue_pop(queue_t **rear)
-{
-	queue_t *front = (*rear)->next;
-	const bt_t *data = front->data;
-
-	if (*rear == front)
-		*rear = NULL;
 	else
-		(*rear)->next = front->next;
-	free(front);
-	return (data);
-}
-
-/**
- * queue_delete - delete a queue
- * @rear: a pointer to the rear of the queue
- */
-void queue_delete(queue_t *rear)
-{
-	queue_t *temp;
-
-	if (rear)
 	{
-		temp = rear->next;
-		rear->next = NULL;
-		while ((rear = temp))
+		if (tree)
 		{
-			temp = temp->next;
-			free(rear);
+			l = tree->left ? 1 + binary_tree_height(tree->left) : 0;
+			r = tree->right ? 1 + binary_tree_height(tree->right) : 0;
 		}
+		return ((l > r) ? l : r);
 	}
 }
-
 /**
- * binary_tree_levelorder - perform level-order traversal on a binary tree
- * @tree: the tree to traverse
- * @func: the function to apply
+ * binary_tree_depth - depth of specified node from root
+ * @tree: node to check the depth
+ * Return: 0 is it is the root or number of depth
  */
-void binary_tree_levelorder(const bt_t *tree, void (*func)(int))
+size_t binary_tree_depth(const binary_tree_t *tree)
 {
-	queue_t *rear = NULL;
+	return ((tree && tree->parent) ? 1 + binary_tree_depth(tree->parent) : 0);
+}
+/**
+ * linked_node - this function makes a linked list from depth level and node
+ * @head: pointer to head of linked list
+ * @tree: node to store
+ * @level: depth of node to store
+ * Return: Nothing
+ */
+void linked_node(link_t **head, const binary_tree_t *tree, size_t level)
+{
+	link_t *new, *aux;
 
-	if (tree && func)
+	new = malloc(sizeof(link_t));
+	if (new == NULL)
 	{
-		if (queue_push(&rear, tree))
+		return;
+	}
+	new->n = level;
+	new->node = tree;
+	if (*head == NULL)
+	{
+		new->next = NULL;
+		*head = new;
+	}
+	else
+	{
+		aux = *head;
+		while (aux->next != NULL)
 		{
-			while (rear)
+			aux = aux->next;
+		}
+		new->next = NULL;
+		aux->next = new;
+	}
+}
+/**
+ * recursion - goes through the complete tree and each stores each node
+ * in linked_node function
+ * @head: pointer to head of linked list
+ * @tree: node to check
+ * Return: Nothing by default it affects the pointer
+ */
+void recursion(link_t **head, const binary_tree_t *tree)
+{
+	size_t level = 0;
+
+	if (tree != NULL)
+	{
+		level = binary_tree_depth(tree);
+		linked_node(head, tree, level);
+		recursion(head, tree->left);
+		recursion(head, tree->right);
+	}
+}
+/**
+ * binary_tree_levelorder - print the nodes element in a lever-order
+ * @tree: root node
+ * @func: function to use
+ * Return: Nothing
+ */
+void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int))
+{
+	link_t *head, *aux;
+	size_t height = 0, count = 0;
+
+	if (!tree || !func)
+	{
+		return;
+	}
+	else
+	{
+		height = binary_tree_height(tree);
+		head = NULL;
+		recursion(&head, tree);
+		while (count <= height)
+		{
+			aux = head;
+			while (aux != NULL)
 			{
-				tree = queue_pop(&rear);
-				if (tree->left)
+				if (count == aux->n)
 				{
-					if (queue_push(&rear, tree->left))
-						rear = rear->next;
-					else
-						break;
+					func(aux->node->n);
 				}
-				if (tree->right)
-				{
-					if (queue_push(&rear, tree->right))
-						rear = rear->next;
-					else
-						break;
-				}
-				func(tree->n);
+				aux = aux->next;
 			}
-			queue_delete(rear);
+			count++;
+		}
+		while (head != NULL)
+		{
+			aux = head;
+			head = head->next;
+			free(aux);
 		}
 	}
 }

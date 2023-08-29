@@ -1,131 +1,106 @@
 #include "binary_trees.h"
-
 /**
- * bst_inorder_successor - find the in-order successor of a node in a BST
- * @node: the node for which the in-order successor should be found
- *
- * Return: Return a pointer to the in-order successor.
- * If no such node exists, return NULL.
+ * successor - get the next successor i mean the min node in the right subtree
+ * @node: tree to check
+ * Return: the min value of this tree
  */
-bst_t *bst_inorder_successor(bst_t *node)
+int successor(bst_t *node)
 {
-	bst_t *next = node;
+	int left = 0;
 
-	if (node)
+	if (node == NULL)
 	{
-		node = node->right;
-		if (node)
-		{
-			next = node;
-			while ((next = next->left))
-				node = next;
-		}
+		return (0);
 	}
-	return (node);
-}
+	else
+	{
+		left = successor(node->left);
+		if (left == 0)
+		{
+			return (node->n);
+		}
+		return (left);
+	}
 
+}
 /**
- * _bst_replace - replace a node with it's successor a BST
- * @target: a pointer to the target node
- *
- * Return: a pointer to the successor
+ * two_children - function that gets the next successor using the min
+ * value in the right subtree, and then replace the node value for
+ * this successor
+ * @root: node tat has two children
+ * Return: the value found
  */
-bst_t *_bst_replace(bst_t *target)
+int two_children(bst_t *root)
 {
-	bst_t *successor = bst_inorder_successor(target);
+	int new_value = 0;
 
-	if (successor)
-	{
-		successor->left = target->left;
-		if (successor->left)
-			successor->left->parent = successor;
-		if (successor != target->right)
-		{
-			successor->parent->left = successor->right;
-			if (successor->right)
-				successor->right->parent = successor->parent;
-			successor->right = target->right;
-			if (successor->right)
-				successor->right->parent = successor;
-		}
-		successor->parent = target->parent;
-	}
-	return (successor);
+	new_value = successor(root->right);
+	root->n = new_value;
+	return (new_value);
 }
-
 /**
- * bst_replace - replace a node with it's successor a BST
- * @current: a double pointer to the target node
- *
- * Return: a pointer to the replaced node
+ *remove_type - function that removes a node depending of its children
+ *@root: node to remove
+ *Return: 0 if it has no children or other value if it has
  */
-bst_t *bst_replace(bst_t **current)
+int remove_type(bst_t *root)
 {
-	bst_t *successor = NULL, *target = *current;
-
-	if (target)
+	if (!root->left && !root->right)
 	{
-		if (target->left && target->right)
-		{
-			successor = _bst_replace(target);
-		}
-		else if (target->left)
-		{
-			successor = target->left;
-			successor->right = target->right;
-			if (successor->right)
-				successor->right->parent = successor;
-			successor->parent = target->parent;
-		}
-		else if (target->right)
-		{
-			successor = target->right;
-			successor->left = target->left;
-			if (successor->left)
-				successor->left->parent = successor;
-			successor->parent = target->parent;
-		}
+		if (root->parent->right == root)
+			root->parent->right = NULL;
+		else
+			root->parent->left = NULL;
+		free(root);
+		return (0);
 	}
-	*current = successor;
-	return (target);
-}
-
-
-
-/**
- * _bst_remove - remove an element from a BST
- * @tree: a pointer to the the tree from which to remove an element
- * @value: the value of the element to remove
- *
- * Return: If tree is NULL or the given value cannot be found, return NULL.
- * Otherwise, return a pointer to the root of the resulting tree.
- */
-bst_t *_bst_remove(bst_t **tree, int value)
-{
-	if (*tree)
+	else if ((!root->left && root->right) || (!root->right && root->left))
 	{
-		if (value < (*tree)->n)
-			return (_bst_remove(&((*tree)->left), value), *tree);
-		if (value > (*tree)->n)
-			return (_bst_remove(&((*tree)->right), value), *tree);
-		free(bst_replace(tree));
-		return (*tree);
+		if (!root->left)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->right;
+			else
+				root->parent->left = root->right;
+			root->right->parent = root->parent;
+		}
+		if (!root->right)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->left;
+			else
+				root->parent->left = root->left;
+			root->left->parent = root->parent;
+		}
+		free(root);
+		return (0);
 	}
-	return (NULL);
+	else
+		return (two_children(root));
 }
-
 /**
- * bst_remove - remove an element from a BST
- * @root: a pointer to the root of the tree from which to remove an element
- * @value: the value of the element to remove
- *
- * Return: If tree is NULL, return NULL.
- * Otherwise, return a pointer to the root of the resulting tree.
+ * bst_remove - remove a node from a BST tree
+ * @root: root of the tree
+ * @value: node with this value to remove
+ * Return: the tree changed
  */
 bst_t *bst_remove(bst_t *root, int value)
 {
-	if (root)
-		_bst_remove(&root, value);
+	int type = 0;
 
+	if (root == NULL)
+		return (NULL);
+	if (value < root->n)
+		bst_remove(root->left, value);
+	else if (value > root->n)
+		bst_remove(root->right, value);
+	else if (value == root->n)
+	{
+		type = remove_type(root);
+		if (type != 0)
+			bst_remove(root->right, type);
+	}
+	else
+		return (NULL);
 	return (root);
 }

@@ -1,121 +1,113 @@
 #include "binary_trees.h"
-
 /**
- * queue_push - push an element into a queue
- * @rear: a pointer to the end of the queue
- * @data: a pointer to the element to queue
- *
- * Return: If memory allocation fails, return NULL.
- * Otherwise, return a pointer to the new node.
+ * new_node - Function that creates a new_node in a linked_list
+ * @node: Type pointer of node to be created
+ * Return: the node created
  */
-queue_t *queue_push(queue_t *rear, const bt_t *data)
+link_t *new_node(binary_tree_t *node)
 {
-	queue_t *temp = malloc(sizeof(*temp));
+	link_t *new;
 
-	if (temp)
+	new =  malloc(sizeof(link_t));
+	if (new == NULL)
 	{
-		temp->data = (bt_t *) data;
-		if (rear)
+		return (NULL);
+	}
+	new->node = node;
+	new->next = NULL;
+
+	return (new);
+}
+/**
+ * free_q - Function that free the nodes at the linked list
+ * @head: Node of the linked_list
+ */
+void free_q(link_t *head)
+{
+	link_t *temp_node;
+
+	while (head)
+	{
+		temp_node = head->next;
+		free(head);
+		head = temp_node;
+	}
+}
+/**
+ * _push - Function that pushes a node into the stack
+ * @node: Type pointer of node of the tree
+ * @head: Type head node of in the stack
+ * @tail: Type tail node of in the stack
+ */
+void _push(binary_tree_t *node, link_t *head, link_t **tail)
+{
+	link_t *new;
+
+	new = new_node(node);
+	if (new == NULL)
+	{
+		free_q(head);
+		exit(1);
+	}
+	(*tail)->next = new;
+	*tail = new;
+}
+/**
+ * _pop - Function that pops a node into the stack
+ * @head: Type head node of in the stack
+ */
+void _pop(link_t **head)
+{
+	link_t *temp_node;
+
+	temp_node = (*head)->next;
+	free(*head);
+	*head = temp_node;
+}
+/**
+ * binary_tree_is_complete - Function that checks if a binary tree is complete
+ * @tree: Type pointer of node of the tree
+ * Return: 1 if is complete 0 if it is not
+ */
+int binary_tree_is_complete(const binary_tree_t *tree)
+{
+	link_t *head, *tail;
+	int flag = 0;
+
+	if (tree == NULL)
+	{
+		return (0);
+	}
+	head = tail = new_node((binary_tree_t *)tree);
+	if (head == NULL)
+	{
+		exit(1);
+	}
+	while (head != NULL)
+	{
+		if (head->node->left != NULL)
 		{
-			temp->next = rear->next;
-			rear->next = temp;
+			if (flag == 1)
+			{
+				free_q(head);
+				return (0);
+			}
+			_push(head->node->left, head, &tail);
 		}
 		else
+			flag = 1;
+		if (head->node->right != NULL)
 		{
-			temp->next = temp;
+			if (flag == 1)
+			{
+				free_q(head);
+				return (0);
+			}
+			_push(head->node->right, head, &tail);
 		}
+		else
+			flag = 1;
+		_pop(&head);
 	}
-	return (temp);
-}
-
-/**
- * queue_pop - pop an element from a queue
- * @rear: a double pointer to the end of the queue
- *
- * Description: This function expects a pointer to a non-empty queue.
- *
- * Return: Return a pointer to the popped element.
- */
-const bt_t *queue_pop(queue_t **rear)
-{
-	queue_t *front = *rear ? (*rear)->next : NULL;
-	const bt_t *data = front ? front->data : NULL;
-
-	if (*rear == front)
-		*rear = NULL;
-	else
-		(*rear)->next = front->next;
-	free(front);
-
-	return (data);
-}
-
-/**
- * queue_delete - delete a queue
- * @rear: a pointer to the rear of the queue
- */
-void queue_delete(queue_t *rear)
-{
-	queue_t *temp;
-
-	if (rear)
-	{
-		temp = rear->next;
-		rear->next = NULL;
-
-		while ((rear = temp))
-		{
-			temp = temp->next;
-			free(rear);
-		}
-	}
-}
-
-/**
- * binary_tree_is_complete - determine if a binary tree is complete
- * @tree: a pointer to the root of the tree to examine
- *
- * Return: If tree is NULL or the tree is not complete, return 0.
- * If memory allocation fails, return -1.
- * Otherwise, return 1.
- */
-int binary_tree_is_complete(const bt_t *tree)
-{
-	queue_t *new, *rear;
-	bool is_full = true;
-
-	if (tree)
-	{
-		rear = queue_push(NULL, tree);
-		while (rear && (tree = queue_pop(&rear)))
-		{
-			if (!is_full)
-			{
-				if (tree->left || tree->right)
-					return (queue_delete(rear), 0);
-			}
-			else
-			{
-				is_full = tree->left && tree->right;
-				if (!is_full && tree->right)
-					return (queue_delete(rear), 0);
-			}
-			if (tree->left)
-			{
-				new = queue_push(rear, tree->left);
-				if (!new)
-					return (queue_delete(rear), -1);
-				rear = new;
-			}
-			if (tree->right)
-			{
-				new = queue_push(rear, tree->right);
-				if (!new)
-					return (queue_delete(rear), -1);
-				rear = new;
-			}
-		}
-		return (1);
-	}
-	return (0);
+	return (1);
 }

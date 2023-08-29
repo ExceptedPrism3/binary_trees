@@ -1,67 +1,106 @@
 #include "binary_trees.h"
 
 /**
- * recursive_height - measures the height of a binary tree
+ * queue_push - push an element into a queue
+ * @rear: a double pointer to the end of the queue
+ * @data: a pointer to the element to queue
  *
- * @tree: tree root
- * Return: height
+ * Return: If memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the new node.
  */
-size_t recursive_height(const binary_tree_t *tree)
+queue_t *queue_push(queue_t **rear, const bt_t *data)
 {
-	size_t left = 0;
-	size_t right = 0;
+	queue_t *new = calloc(1, sizeof(*new));
 
-	if (tree == NULL)
-		return (0);
-
-	left = recursive_height(tree->left);
-	right = recursive_height(tree->right);
-
-	if (left > right)
-		return (left + 1);
-
-	return (right + 1);
+	if (new)
+	{
+		new->data = (void *) data;
+		if (rear)
+		{
+			if (*rear)
+				new->next = (*rear)->next;
+			else
+				*rear = new;
+			(*rear)->next = new;
+		}
+	}
+	return (new);
 }
 
 /**
- * print_level - prints nodes at the same level
+ * queue_pop - pop an element from a queue
+ * @rear: a double pointer to the end of the queue
  *
- * @tree: tree root
- * @level: level node
- * @func: pointer to a function
- * Return: no return
+ * Description: This function expects a pointer to a non-empty queue.
+ *
+ * Return: Return a pointer to the popped element.
  */
-void print_level(const binary_tree_t *tree, int level, void (*func)(int))
+const bt_t *queue_pop(queue_t **rear)
 {
-	if (tree == NULL)
-		return;
+	queue_t *front = (*rear)->next;
+	const bt_t *data = front->data;
 
-	if (level == 1)
-		func(tree->n);
-	else if (level > 1)
+	if (*rear == front)
+		*rear = NULL;
+	else
+		(*rear)->next = front->next;
+	free(front);
+	return (data);
+}
+
+/**
+ * queue_delete - delete a queue
+ * @rear: a pointer to the rear of the queue
+ */
+void queue_delete(queue_t *rear)
+{
+	queue_t *temp;
+
+	if (rear)
 	{
-		print_level(tree->left, level - 1, func);
-		print_level(tree->right, level - 1, func);
+		temp = rear->next;
+		rear->next = NULL;
+		while ((rear = temp))
+		{
+			temp = temp->next;
+			free(rear);
+		}
 	}
 }
 
 /**
- * binary_tree_levelorder - prints data in level-order traversal
- *
- * @tree: tree root
- * @func: pointer to a function
- * Return: no return
+ * binary_tree_levelorder - perform level-order traversal on a binary tree
+ * @tree: the tree to traverse
+ * @func: the function to apply
  */
-void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int))
+void binary_tree_levelorder(const bt_t *tree, void (*func)(int))
 {
-	size_t height;
-	size_t i;
+	queue_t *rear = NULL;
 
-	if (tree == NULL || func == NULL)
-		return;
-
-	height = recursive_height(tree);
-
-	for (i = 1; i <= height; i++)
-		print_level(tree, i, func);
+	if (tree && func)
+	{
+		if (queue_push(&rear, tree))
+		{
+			while (rear)
+			{
+				tree = queue_pop(&rear);
+				if (tree->left)
+				{
+					if (queue_push(&rear, tree->left))
+						rear = rear->next;
+					else
+						break;
+				}
+				if (tree->right)
+				{
+					if (queue_push(&rear, tree->right))
+						rear = rear->next;
+					else
+						break;
+				}
+				func(tree->n);
+			}
+			queue_delete(rear);
+		}
+	}
 }

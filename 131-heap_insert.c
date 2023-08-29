@@ -1,148 +1,152 @@
 #include "binary_trees.h"
 
 /**
- * height - measures the height of a tree
+ * queue_push - push an element into a queue
+ * @rear: a double pointer to the end of the queue
+ * @data: a pointer to the element to queue
  *
- * @tree: tree root
- * Return: height
+ * Return: If memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the new node.
  */
-int height(const binary_tree_t *tree)
+queue_t *queue_push(queue_t **rear, heap_t *data)
 {
-	int left = 0;
-	int right = 0;
+	queue_t *new = calloc(1, sizeof(*new));
 
-	if (tree == NULL)
-		return (-1);
-
-	left = height(tree->left);
-	right = height(tree->right);
-
-	if (left > right)
-		return (left + 1);
-
-	return (right + 1);
-}
-
-/**
- * binary_tree_is_perfect - checks if a binary tree is perfect
- *
- * @tree: tree root
- * Return: 1 if tree is perfect, 0 otherwise
- */
-int binary_tree_is_perfect(const binary_tree_t *tree)
-{
-	if (tree && height(tree->left) == height(tree->right))
+	if (new)
 	{
-		if (height(tree->left) == -1)
-			return (1);
-
-		if ((tree->left && !((tree->left)->left) && !((tree->left)->right))
-		    && (tree->right && !((tree->right)->left) && !((tree->right)->right)))
-			return (1);
-
-		if (tree && tree->left && tree->right)
-			return (binary_tree_is_perfect(tree->left) &&
-				binary_tree_is_perfect(tree->right));
-	}
-
-	return (0);
-}
-
-/**
- * swap - swaps nodes when child is greater than parent
- *
- * @arg_node: parent node
- * @arg_child: child node
- * Return: no return
- */
-void swap(heap_t **arg_node, heap_t **arg_child)
-{
-	heap_t *node, *child, *node_child, *node_left, *node_right, *parent;
-	int left_right;
-
-	node = *arg_node, child = *arg_child;
-	if (child->n > node->n)
-	{
-		if (child->left)
-			child->left->parent = node;
-		if (child->right)
-			child->right->parent = node;
-		if (node->left == child)
-			node_child = node->right, left_right = 0;
-		else
-			node_child = node->left, left_right = 1;
-		node_left = child->left, node_right = child->right;
-		if (left_right == 0)
+		new->data = (void *) data;
+		if (rear)
 		{
-			child->right = node_child;
-			if (node_child)
-				node_child->parent = child;
-			child->left = node;
-		}
-		else
-		{
-			child->left = node_child;
-			if (node_child)
-				node_child->parent = child;
-			child->right = node;
-		}
-		if (node->parent)
-		{
-			if (node->parent->left == node)
-				node->parent->left = child;
+			if (*rear)
+				new->next = (*rear)->next;
 			else
-				node->parent->right = child;
+				*rear = new;
+			(*rear)->next = new;
 		}
-		parent = node->parent, child->parent = parent;
-		node->parent = child, node->left = node_left;
-		node->right = node_right, *arg_node = child;
+	}
+	return (new);
+}
+
+/**
+ * queue_pop - pop an element from a queue
+ * @rear: a double pointer to the end of the queue
+ *
+ * Description: This function expects a pointer to a non-empty queue.
+ *
+ * Return: Return a pointer to the popped element.
+ */
+heap_t *queue_pop(queue_t **rear)
+{
+	queue_t *front = (*rear)->next;
+	heap_t *data = front->data;
+
+	if (*rear == front)
+		*rear = NULL;
+	else
+		(*rear)->next = front->next;
+	free(front);
+	return (data);
+}
+
+/**
+ * queue_delete - delete a queue
+ * @rear: a pointer to the rear of the queue
+ */
+void queue_delete(queue_t *rear)
+{
+	queue_t *temp;
+
+	if (rear)
+	{
+		temp = rear->next;
+		rear->next = NULL;
+		while ((rear = temp))
+		{
+			temp = temp->next;
+			free(rear);
+		}
 	}
 }
 
 /**
- * heap_insert - function that inserts a value in Max Binary Heap
- * @value: value to be inserted
- * @root: tree root
- * Return: pointer to the created node, or NULL on failure.
+ * _heap_insert - insert a value into a max heap
+ * @rear: the rear of an initialized level-order queue
+ * @new: the node to be inserted
+ */
+void _heap_insert(queue_t *rear, heap_t *new)
+{
+	heap_t *current;
+
+	while (rear)
+	{
+		current = queue_pop(&rear);
+		if (!current->left)
+		{
+			new->parent = current;
+			current->left = new;
+			queue_delete(rear);
+			break;
+		}
+		if (!current->right)
+		{
+			new->parent = current;
+			current->right = new;
+			queue_delete(rear);
+			break;
+		}
+		if (!queue_push(&rear, current->left))
+		{
+			free(new);
+			queue_delete(rear);
+			break;
+		}
+		rear = rear->next;
+		if (!queue_push(&rear, current->right))
+		{
+			free(new);
+			queue_delete(rear);
+			break;
+		}
+		rear = rear->next;
+	}
+}
+
+/**
+ * heap_insert - insert a value into a max heap
+ * @root: a double pointer to the root of a heap
+ * @value: a value to be added to the heap
+ *
+ * Return: If root is NULL or memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the newly inserted node.
  */
 heap_t *heap_insert(heap_t **root, int value)
 {
-	heap_t *new_node;
+	queue_t *rear = NULL;
+	heap_t *new;
 
-	if (*root == NULL)
-	{
-		*root = binary_tree_node(NULL, value);
-		return (*root);
-	}
+	if (!root)
+		return (NULL);
 
-	if (binary_tree_is_perfect(*root) || !binary_tree_is_perfect((*root)->left))
-	{
-		if ((*root)->left)
-		{
-			new_node = heap_insert(&((*root)->left), value);
-			swap(root, &((*root)->left));
-			return (new_node);
-		}
-		else
-		{
-			new_node = (*root)->left = binary_tree_node(*root, value);
-			swap(root, &((*root)->left));
-			return (new_node);
-		}
-	}
+	new = binary_tree_node(NULL, value);
+	if (!new)
+		return (NULL);
 
-	if ((*root)->right)
-	{
-		new_node = heap_insert(&((*root)->right), value);
-		swap(root, (&(*root)->right));
-		return (new_node);
-	}
-	else
-	{
-		new_node = (*root)->right = binary_tree_node(*root, value);
-		swap(root, &((*root)->right));
-		return (new_node);
-	}
+	if (!*root)
+		return ((*root = new));
 
-	return (NULL);
+	if (!queue_push(&rear, *root))
+		return (free(new), NULL);
+
+	_heap_insert(rear, new);
+
+	while (new->parent && new->n > new->parent->n)
+	{
+		new->n ^= new->parent->n;
+		new->parent->n ^= new->n;
+		new->n ^= new->parent->n;
+		new = new->parent;
+		if (!new->parent)
+			return ((*root = new));
+	}
+	return (new);
 }

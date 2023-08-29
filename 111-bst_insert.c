@@ -1,57 +1,48 @@
 #include "binary_trees.h"
 
 /**
- * bst_in - checks if node is inserted
+ * _bst_insert - insert a node into a binary search tree
+ * @tree: a double pointer to the root of the target tree
+ * @value: the value to add to the tree
  *
- * @tree: tree root
- * @value: node value
- * Return: pointer to the new node
+ * Return: If memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the newly created node.
  */
-bst_t *bst_in(bst_t **tree, int value)
+bst_t *_bst_insert(bst_t **tree, int value)
 {
-	if (value < (*tree)->n)
-	{
-		if ((*tree)->left == NULL)
-		{
-			(*tree)->left = binary_tree_node(*tree, value);
-			return ((*tree)->left);
-		}
-		else
-		{
-			return (bst_in(&((*tree)->left), value));
-		}
-	}
+	bst_t *node = NULL;
 
-	if (value > (*tree)->n)
+	if (*tree)
 	{
-		if ((*tree)->right == NULL)
+		if (value < (*tree)->n)
 		{
-			(*tree)->right = binary_tree_node(*tree, value);
-			return ((*tree)->right);
+			node = _bst_insert(&((*tree)->left), value);
+			if (node && !node->parent)
+				node->parent = *tree;
+			return (node);
 		}
-		else
+		if (value > (*tree)->n)
 		{
-			return (bst_in(&((*tree)->right), value));
+			node = _bst_insert(&((*tree)->right), value);
+			if (node && !node->parent)
+				node->parent = *tree;
+			return (node);
 		}
+		return (NULL);
 	}
-
-	return (NULL);
+	*tree = binary_tree_node(NULL, value);
+	return (*tree);
 }
 
 /**
- * bst_insert - inserts a value in a Binary Search Tree
+ * bst_insert - insert a node into a binary search tree
+ * @tree: a double pointer to the root of the target tree
+ * @value: the value to add to the tree
  *
- * @tree: tree root
- * @value: node value
- * Return: pointer to the new node
+ * Return: If memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the newly created node.
  */
 bst_t *bst_insert(bst_t **tree, int value)
 {
-	if (*tree == NULL)
-	{
-		*tree = binary_tree_node(NULL, value);
-		return (*tree);
-	}
-
-	return (bst_in(tree, value));
+	return (tree ? _bst_insert(tree, value) : NULL);
 }

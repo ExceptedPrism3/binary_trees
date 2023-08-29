@@ -1,109 +1,148 @@
 #include "binary_trees.h"
 
 /**
- * check_balance - checks the balance of each node
+ * _avl_insert_lchild - call upon return to parent from child's left subtree
+ * @tree: a pointer to the node's parent
+ * @value: the inserted value
  *
- * @node: pointer to the node
- * @value: input value
- * Return: no return
+ * Return: the resulting AVL state
  */
-void check_balance(avl_t **node, int value)
+avl_state_t _avl_insert_lchild(avl_t **tree, int value)
 {
-	int balance;
-
-	balance = binary_tree_balance(*node);
-
-	if (balance > 1 && value < (*node)->left->n)
-	{
-		*node = binary_tree_rotate_right(*node);
-		return;
-	}
-
-	if (balance < -1 && value > (*node)->right->n)
-	{
-		*node = binary_tree_rotate_left(*node);
-		return;
-	}
-
-	if (balance > 1 && value > (*node)->left->n)
-	{
-		(*node)->left = binary_tree_rotate_left((*node)->left);
-		*node = binary_tree_rotate_right(*node);
-		return;
-	}
-
-	if (balance < -1 && value < (*node)->right->n)
-	{
-		(*node)->right = binary_tree_rotate_right((*node)->right);
-		*node = binary_tree_rotate_left(*node);
-		return;
-	}
-}
-
-/**
- * avl_in - checks if node is inserted
- *
- * @tree: tree root
- * @value: node value
- * Return: pointer to the new node
- */
-avl_t *avl_in(avl_t **tree, int value)
-{
-	avl_t *node;
-
 	if (value < (*tree)->n)
 	{
-		if ((*tree)->left == NULL)
+		if (binary_tree_balance(*tree) > 1)
 		{
-			(*tree)->left = binary_tree_node(*tree, value);
-			return ((*tree)->left);
+			(*tree) = binary_tree_rotate_right(*tree);
 		}
-		else
-		{
-			node = avl_in(&((*tree)->left), value);
-			if (node)
-				check_balance(tree, value);
-			return (node);
-		}
+		return (AVL_LCHILD);
 	}
-
-	if (value > (*tree)->n)
+	if (binary_tree_balance(*tree) < -1)
 	{
-		if ((*tree)->right == NULL)
-		{
-			(*tree)->right = binary_tree_node(*tree, value);
-			return ((*tree)->right);
-		}
-		else
-		{
-			node = avl_in(&((*tree)->right), value);
-			if (node)
-				check_balance(tree, value);
-			return (node);
-		}
+		(*tree)->right = binary_tree_rotate_right((*tree)->right);
+		(*tree) = binary_tree_rotate_left(*tree);
 	}
-
-	return (NULL);
+	return (AVL_RCHILD);
 }
 
 /**
- * avl_insert - inserts a value in a AVL Tree
+ * _avl_insert_rchild - call upon return to parent from child's right subtree
+ * @tree: a pointer to the node's parent
+ * @value: the inserted value
  *
- * @tree: tree root
- * @value: node value
- * Return: pointer to the new node
+ * Return: the resulting AVL state
+ */
+avl_state_t _avl_insert_rchild(avl_t **tree, int value)
+{
+	if (value > (*tree)->n)
+	{
+		if (binary_tree_balance(*tree) < -1)
+		{
+			(*tree) = binary_tree_rotate_left(*tree);
+		}
+		return (AVL_RCHILD);
+	}
+	if (binary_tree_balance(*tree) > 1)
+	{
+		(*tree)->left = binary_tree_rotate_left((*tree)->left);
+		(*tree) = binary_tree_rotate_right(*tree);
+	}
+	return (AVL_LCHILD);
+}
+
+/**
+ * _avl_insert - insert a value into an AVL tree
+ * @node: a pointer to memory to store a pointer to the new node
+ * @tree: a double pointer to the root of the tree
+ * @value: the value to insert
+ *
+ * Return: the current state of AVL insertion
+ */
+avl_state_t _avl_insert(avl_t **new, avl_t **tree, int value)
+{
+	avl_t **child = NULL;
+
+	if (*tree)
+	{
+		if (value != (*tree)->n)
+		{
+			if (value < (*tree)->n)
+				child = &((*tree)->left);
+			else
+				child = &((*tree)->right);
+
+			switch (_avl_insert(new, child, value))
+			{
+			case AVL_RETURN:
+				break;
+
+			case AVL_LCHILD:
+				return (_avl_insert_lchild(tree, value));
+
+			case AVL_RCHILD:
+				return (_avl_insert_rchild(tree, value));
+
+			case AVL_CREATE:
+				*new = binary_tree_node(*tree, value);
+				if (*new)
+				{
+					*child = *new;
+					if (value < (*tree)->n)
+						return (AVL_LCHILD);
+					else
+						return (AVL_RCHILD);
+				}
+				break;
+			}
+		}
+		return (AVL_RETURN);
+	}
+	return (AVL_CREATE);
+}
+
+/**
+ * avl_insert - insert a value into an AVL tree
+ * @tree: a double pointer to the root of the tree
+ * @value: the value to insert
+ *
+ * Return: If tree is NULL memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the new node.
  */
 avl_t *avl_insert(avl_t **tree, int value)
 {
-	avl_t *node;
+	avl_t *new = NULL;
 
-	if (*tree == NULL)
+	if (tree)
 	{
-		*tree = binary_tree_node(NULL, value);
-		return (*tree);
+		if (*tree)
+		{
+			switch (_avl_insert(&new, tree, value))
+			{
+			case AVL_RETURN:
+				break;
+
+			case AVL_LCHILD:
+				_avl_insert_lchild(tree, value);
+				break;
+
+			case AVL_RCHILD:
+				_avl_insert_rchild(tree, value);
+				break;
+
+			case AVL_CREATE:
+				new = binary_tree_node(*tree, value);
+				if (new)
+				{
+					if (value < (*tree)->n)
+						(*tree)->left = new;
+					else
+						(*tree)->right = new;
+				}
+				break;
+			}
+			return (new);
+		}
+		return ((*tree = binary_tree_node(*tree, value)));
 	}
-
-	node = avl_in(tree, value);
-
-	return (node);
+	return (NULL);
 }

@@ -1,55 +1,74 @@
 #include "binary_trees.h"
 
 /**
- * recursive_depth - measures the depth of a node in a binary tree
+ * binary_tree_find_root - find the root of a binary tree
+ * @node: a pointer to a binary tree node
  *
- * @tree: tree root
- * Return: depth of a node in a binary tree
+ * Return: a pointer to the root of the tree
  */
-size_t recursive_depth(const binary_tree_t *tree)
+const bt_t *binary_tree_find_root(const bt_t *node)
 {
-	if (tree == NULL)
-		return (-1);
+	const bt_t *root = node;
 
-	return (recursive_depth(tree->parent) + 1);
+	if (node)
+	{
+		while ((node = node->parent))
+			root = node;
+	}
+	return (root);
 }
 
 /**
- * binary_tree_depth - calls recursive_depth to return the depth
- * of a node in a binary tree
+ * _binary_trees_ancestor - find the least common ancestor of two nodes
+ * @root: a pointer to a subtree root
+ * @n1: a pointer to a descendant
+ * @n2: a pointer to a descendant
  *
- * @tree: tree root
- * Return: depth of the tree or 0 if tree is NULL;
+ * Return: a pointer to the least common ancestor
  */
-size_t binary_tree_depth(const binary_tree_t *tree)
+bt_t *_binary_trees_ancestor(const bt_t *root, const bt_t *n1, const bt_t *n2)
 {
-	if (tree == NULL)
-		return (0);
+	const bt_t *lhs = NULL;
+	const bt_t *rhs = NULL;
 
-	return (recursive_depth(tree));
+	if (root)
+	{
+		if (root == n1 || root == n2)
+			return ((bt_t *) root);
+
+		lhs = _binary_trees_ancestor(root->left, n1, n2);
+		rhs = _binary_trees_ancestor(root->right, n1, n2);
+
+		if (lhs && rhs)
+			return ((bt_t *) root);
+		if (lhs)
+			return ((bt_t *) lhs);
+		if (rhs)
+			return ((bt_t *) rhs);
+	}
+	return (NULL);
 }
 
 /**
- * binary_tree_uncle - finds the lowest common ancestor of two nodes
+ * binary_trees_ancestor - find the least common ancestor of two nodes
+ * @n1: a pointer to a node
+ * @n2: a pointer to a node
  *
- * @first: pointer to the first node
- * @second: pointer to the second node
- * Return: pointer to the lowest common ancestor
+ * Return: a pointer to the least common ancestor
  */
-binary_tree_t *binary_trees_ancestor(const binary_tree_t *first,
-				     const binary_tree_t *second)
+bt_t *binary_trees_ancestor(const bt_t *n1, const bt_t *n2)
 {
-	if (first == NULL || second == NULL)
-		return (NULL);
+	const bt_t *root1 = NULL;
+	const bt_t *root2 = NULL;
 
-	if (first == second)
-		return ((binary_tree_t *)first);
+	if (n1 == n2)
+		return ((bt_t *) n1);
 
-	if (binary_tree_depth(first) > binary_tree_depth(second))
-		return (binary_trees_ancestor(first->parent, second));
+	root1 = binary_tree_find_root(n1);
+	root2 = binary_tree_find_root(n2);
 
-	if (binary_tree_depth(first) < binary_tree_depth(second))
-		return (binary_trees_ancestor(first, second->parent));
+	if (root1 == root2)
+		return ((bt_t *) _binary_trees_ancestor(root1, n1, n2));
 
-	return (binary_trees_ancestor(first->parent, second->parent));
+	return (NULL);
 }

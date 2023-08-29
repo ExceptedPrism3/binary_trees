@@ -1,85 +1,139 @@
 #include "binary_trees.h"
 
 /**
- * binary_tree_size - measures the size of a binary tree
+ * queue_push - push an element into a queue
+ * @rear: a double pointer to the end of the queue
+ * @data: a pointer to the element to queue
  *
- * @tree: tree root
- * Return: size of the tree or 0 if tree is NULL;
+ * Return: If memory allocation fails, return NULL.
+ * Otherwise, return a pointer to the new node.
  */
-size_t binary_tree_size(const binary_tree_t *tree)
+queue_t *queue_push(queue_t **rear, const bt_t *data)
 {
-	if (tree == NULL)
-		return (0);
+	queue_t *new = calloc(1, sizeof(*new));
 
-	return (binary_tree_size(tree->left) + binary_tree_size(tree->right) + 1);
+	if (new)
+	{
+		new->data = (void *) data;
+		if (rear)
+		{
+			if (*rear)
+				new->next = (*rear)->next;
+			else
+				*rear = new;
+			(*rear)->next = new;
+		}
+	}
+	return (new);
 }
 
 /**
- * tree_is_complete - checks if tree is complete
+ * queue_pop - pop an element from a queue
+ * @rear: a double pointer to the end of the queue
  *
- * @tree: pointer to the tree root
- * @i: node index
- * @cnodes: number of nodes
- * Return: 1 if tree is complete, 0 otherwise
- */
-int tree_is_complete(const binary_tree_t *tree, int i, int cnodes)
-{
-	if (tree == NULL)
-		return (1);
-
-	if (i >= cnodes)
-		return (0);
-
-	return (tree_is_complete(tree->left, (2 * i) + 1, cnodes) &&
-		tree_is_complete(tree->right, (2 * i) + 2, cnodes));
-}
-
-
-/**
- * binary_tree_is_complete - calls to tree_is_complete function
+ * Description: This function expects a pointer to a non-empty queue.
  *
- * @tree: tree root
- * Return: 1 if tree is complete, 0 otherwise
+ * Return: Return a pointer to the popped element.
  */
-int binary_tree_is_complete(const binary_tree_t *tree)
+const bt_t *queue_pop(queue_t **rear)
 {
-	size_t cnodes;
+	queue_t *front = (*rear)->next;
+	const bt_t *data = front->data;
 
-	if (tree == NULL)
-		return (0);
-
-	cnodes = binary_tree_size(tree);
-
-	return (tree_is_complete(tree, 0, cnodes));
+	if (*rear == front)
+		*rear = NULL;
+	else
+		(*rear)->next = front->next;
+	free(front);
+	return (data);
 }
 
 /**
- * check_parent - checks if parent has a greater value than its childs
- *
- * @tree: pointer to the node
- * Return: 1 if parent has a greater value, 0 otherwise
+ * queue_delete - delete a queue
+ * @rear: a pointer to the rear of the queue
  */
-int check_parent(const binary_tree_t *tree)
+void queue_delete(queue_t *rear)
 {
-	if (tree == NULL)
-		return (1);
+	queue_t *temp;
 
-	if (tree->n > tree->parent->n)
-		return (0);
-
-	return (check_parent(tree->left) && check_parent(tree->right));
+	if (rear)
+	{
+		temp = rear->next;
+		rear->next = NULL;
+		while ((rear = temp))
+		{
+			temp = temp->next;
+			free(rear);
+		}
+	}
 }
 
 /**
- * binary_tree_is_heap - checks if an input tree is a Max Binary Heap
+ * binary_tree_is_complete - determine if a binary tree is complete
+ * @tree: a pointer to the root of the tree to examine
  *
- * @tree: pointer to the root of the tree
- * Return: 1 if tree is a Max Binary Heap, 0 otherwise
+ * Return: If tree is NULL or the tree is not complete, return 0.
+ * If memory allocation fails, return -1.
+ * Otherwise, return 1.
  */
-int binary_tree_is_heap(const binary_tree_t *tree)
+int binary_tree_is_complete(const bt_t *tree)
 {
-	if (!binary_tree_is_complete(tree))
+	queue_t *rear = NULL;
+	bool is_full = true;
+
+	if (!tree)
 		return (0);
 
-	return (check_parent(tree->left) && check_parent(tree->right));
+	if (!queue_push(&rear, tree))
+		return (-1);
+	while (rear)
+	{
+		tree = queue_pop(&rear);
+		if (is_full)
+		{
+			is_full = tree->left && tree->right;
+			if (!is_full && tree->right)
+				return (queue_delete(rear), 0);
+		}
+		else
+		{
+			if (tree->left || tree->right)
+				return (queue_delete(rear), 0);
+		}
+		if (tree->left)
+		{
+			if (!queue_push(&rear, tree->left))
+				return (queue_delete(rear), -1);
+			rear = rear->next;
+		}
+		if (tree->right)
+		{
+			if (!queue_push(&rear, tree->right))
+				return (queue_delete(rear), -1);
+			rear = rear->next;
+		}
+	}
+	return (1);
+}
+
+/**
+ * binary_tree_is_heap - determine if binary tree is a max heap
+ * @tree: a pointer to the root of the tree
+ *
+ * Return: If tree is NULL is the tree is not a max heap, return 0.
+ * Otherwise, return 1.
+ */
+int binary_tree_is_heap(const bt_t *tree)
+{
+	return (tree && (
+			tree->parent ?
+			tree->parent->n >= tree->n :
+			binary_tree_is_complete(tree) == 1
+			) && (
+			!tree->left ||
+			binary_tree_is_heap(tree->left)
+			) && (
+			!tree->right ||
+			binary_tree_is_heap(tree->right)
+			));
 }

@@ -1,85 +1,53 @@
 #include "binary_trees.h"
 
 /**
- * _pow_recursion - Emulation of pow function using recursion
- * @x: Base
- * @y: Exponent
+ * binary_tree_is_leaf - checks if a given node is a leaf
+ * @node: a pointer to the node to check
  *
- * Return: Mathematical power
+ * Return: 1 if node is a leaf, otherwise 0
  */
-int _pow_recursion(int x, int y)
+int binary_tree_is_leaf(const bt_t *node)
 {
-	if (y < 0)
-		return (-1);
-
-	if (y == 0)
-		return (1);
-
-	return (x * _pow_recursion(x, y - 1));
+	return (node && !node->left && !node->right);
 }
 
 /**
- * binary_tree_height - Measures the height of a binary tree
+ * _binary_tree_is_perfect - check if a binary tree is perfect
+ * @tree: a pointer to the root node of the tree
+ * @remaining: the number of levels left to recurse
  *
- * @tree: Pointer to a binary tree.
- *
- * Return: The size of the binary tree.
+ * Return: If tree is NULL or the tree is not perfect, return 0.
+ * Otherwise, return 1.
  */
-
-size_t binary_tree_height(const binary_tree_t *tree)
+int _binary_tree_is_perfect(const bt_t *tree, size_t remaining)
 {
-	size_t h_left = 0, h_right = 0;
-
-	if (!tree)
-		return (0);
-
-	if (tree->left)
-		h_left = 1 + binary_tree_height(tree->left);
-
-	if (tree->right)
-		h_right = 1 + binary_tree_height(tree->right);
-
-	return (h_left > h_right ? h_left : h_right);
+	if (tree)
+	{
+		if (remaining)
+			return (_binary_tree_is_perfect(tree->left, remaining - 1) &&
+					_binary_tree_is_perfect(tree->right, remaining - 1));
+		return (binary_tree_is_leaf(tree));
+	}
+	return (0);
 }
 
 /**
- * binary_tree_leaves - Counts the leaves in a binary tree.
+ * binary_tree_is_perfect - check if a binary tree is perfect
+ * @tree: a pointer to the root node of the tree
  *
- * @tree: Pointer to a binary tree.
- *
- * Return: Number of leafs counts the leaves in a binary tree.
+ * Return: If tree is NULL or the tree is not perfect, return 0.
+ * Otherwise, return 1.
  */
-
-size_t binary_tree_leaves(const binary_tree_t *tree)
+int binary_tree_is_perfect(const bt_t *tree)
 {
-	if (!tree)
-		return (0);
+	const bt_t *root = tree;
+	size_t levels = 0;
 
-	if (!(tree->left) && !(tree->right))
-		return (1);
-
-	return (binary_tree_leaves(tree->left) + binary_tree_leaves(tree->right));
-}
-
-/**
- * binary_tree_is_perfect - Function that checks if a binary tree is perfect
- *
- * @tree: Pointer to a binary tree.
- *
- * Return: 1 if is perfect or 0 if is not perfect
- */
-
-int binary_tree_is_perfect(const binary_tree_t *tree)
-{
-	int h, leaves;
-
-	if (!tree)
-		return (0);
-
-	h = (int)binary_tree_height(tree);
-	leaves = (int)binary_tree_leaves(tree);
-
-	if ((_pow_recursion(2, h)) == leaves)
-		return (1);
+	if (tree)
+	{
+		while ((tree = tree->left))
+			++levels;
+		return (_binary_tree_is_perfect(root, levels));
+	}
 	return (0);
 }
